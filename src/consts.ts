@@ -5,7 +5,7 @@ export const SITE: Site = {
   DESCRIPTION: "Giovanni Sakti, Software Engineer and Writer.",
   EMAIL: "",
   NUM_POSTS_ON_HOMEPAGE: 5,
-  NUM_PROJECTS_ON_HOMEPAGE: 3,
+  NUM_SPEAKINGS_ON_HOMEPAGE: 3,
 };
 
 export const HOME: Metadata = {
@@ -18,7 +18,7 @@ export const BLOG: Metadata = {
   DESCRIPTION: "A collection of my writings.",
 };
 
-export const PROJECTS: Metadata = {
+export const SPEAKINGS: Metadata = {
   TITLE: "Speaking",
   DESCRIPTION:
     "A collection of my public speakings and livestreams.",

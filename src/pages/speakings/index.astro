@@ -3,24 +3,24 @@ import { getCollection } from "astro:content";
 import Layout from "@layouts/Layout.astro";
 import Container from "@components/Container.astro";
 import ArrowCard from "@components/ArrowCard.astro";
-import { PROJECTS } from "@consts";
+import { SPEAKINGS } from "@consts";
 
-const projects = (await getCollection("projects"))
-  .filter((project) => !project.data.draft)
+const speakings = (await getCollection("speakings"))
+  .filter((speaking) => !speaking.data.draft)
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 ---
 
-<Layout title={PROJECTS.TITLE} description={PROJECTS.DESCRIPTION}>
+<Layout title={SPEAKINGS.TITLE} description={SPEAKINGS.DESCRIPTION}>
   <Container>
     <div class="space-y-10">
       <div class="animate font-semibold text-black dark:text-white">
-        Projects
+        Speakings
       </div>
       <ul class="animate not-prose flex flex-col gap-4">
         {
-          projects.map((project) => (
+          speakings.map((speaking) => (
             <li>
-              <ArrowCard entry={project} />
+              <ArrowCard entry={speaking} />
             </li>
           ))
         }
