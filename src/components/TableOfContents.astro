@@ -12,17 +12,29 @@ export interface Heading {
 }
 
 function buildToc(headings: Heading[]) {
+  // Only include headings with depth 1 (# heading) or 2 (## heading)
+  const validHeadings = headings.filter(h => h.depth === 1 || h.depth === 2);
+
   const toc: Heading[] = [];
   const parentHeadings = new Map();
-  headings.forEach((h) => {
+
+  validHeadings.forEach((h) => {
     const heading = { ...h, subheadings: [] };
     parentHeadings.set(heading.depth, heading);
-    if (heading.depth === 2) {
+
+    if (heading.depth === 1) {
       toc.push(heading);
-    } else {
-      parentHeadings.get(heading.depth - 1).subheadings.push(heading);
+    } else if (heading.depth === 2) {
+      const parent = parentHeadings.get(1);
+      if (parent) {
+        parent.subheadings.push(heading);
+      } else {
+        // If there's no level 1 parent, add level 2 directly to toc
+        toc.push(heading);
+      }
     }
   });
+
   return toc;
 }
 ---
