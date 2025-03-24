@@ -9,7 +9,12 @@ export async function GET(context) {
     (speaking) => !speaking.data.draft,
   );
 
-  const items = [...blog, ...speakings].sort(
+  // TODO Migrate speakings from the old blogs
+  // const items = [...blog, ...speakings].sort(
+  //   (a, b) => new Date(b.data.date).valueOf() - new Date(a.data.date).valueOf(),
+  // );
+
+  const items = [...blog].sort(
     (a, b) => new Date(b.data.date).valueOf() - new Date(a.data.date).valueOf(),
   );
 
