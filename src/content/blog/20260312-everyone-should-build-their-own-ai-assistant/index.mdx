@@ -1,0 +1,109 @@
+---
+title: "Everyone Should Build Their Own AI Assistant"
+description: "I've been studying open-source agent runtimes and building one from scratch. These are my observations on the current landscape and what I think everyone working with AI should at least try."
+authors: ["gio"]
+slug: everyone-should-build-their-own-ai-assistant
+date: 2026-03-12T09:00:00+07:00
+tags:
+- ai
+- agents
+- rust
+- duragent
+---
+
+I've been into space opera since I was a kid. One scene from Star Wars in particular caught my attention, where young Anakin mentions that he built C-3PO, a fully sentient protocol droid, from scrap parts in his bedroom. And only a few people in the movie seem impressed. In the Star Wars universe, droids are apparently so common that a nine-year-old on a desert planet can just... put one together from junk.
+
+I keep thinking about that scene because I feel we're getting close to something similar with AI agents. Not the robotic and sentient part (yet?), but the "assemble from parts" part. The building blocks are all available now: LLM APIs, tool calling protocols, session management, memory systems, messaging integrations. Plenty of open-source agent runtimes have emerged, each with different characteristics and of course, trade-offs.
+
+So here's my take: if you work with AI, you should build, or at least assemble, your own personal AI assistant.
+
+## Why bother?
+
+Okay, the obvious question. Why not just use ChatGPT or Claude in the browser?
+
+Because an AI assistant that can access our machines, run commands, read our files, connect to our messaging accounts, and interact with our services is on a completely different level. It can actually *do* things for us, not just chat with us. It can check our logs, draft and send messages, schedule tasks, look things up on the web, and keep working while we step away. It can also remember things across sessions, what we're working on, what we prefer, what we told it last week, and build on that context over time. A chat window can only go as far as copy-paste.
+
+But that power comes with a cost: we really need to understand how it works. And right now, that understanding matters more than it usually does.
+
+We're very early in this space. The abstractions aren't mature yet. If you've worked with agent frameworks, you've probably already felt it: context windows silently truncating important messages, tool calls failing in ways the framework doesn't surface clearly, memory systems that work great in demos but fall apart in longer sessions. The abstractions leak. A lot.
+
+With mature technologies, we can mostly trust the abstraction layer and focus on building on top. We're not there with agents. Knowing what's happening underneath (how the context window is managed, how sessions are persisted, what actually happens when a tool call times out) is still the difference between an agent that works and one that mysteriously doesn't.
+
+There's another reason, and I think it's actually the more important one.
+
+## Security is still largely unsolved
+
+Think about what a personal AI assistant actually needs access to: our files, our shell, our messaging accounts, maybe our calendar, our email, our notes. That's a lot of surface area. And several hard problems are still largely unsolved. How do we prevent sensitive data from leaking to places it shouldn't go? What stops a prompt injection hidden in a fetched webpage from exfiltrating our private files? How do we ensure that tool outputs aren't poisoning the agent's context in ways that change its behavior without us noticing?
+
+This is an early-stage problem. The ecosystem hasn't settled on good answers yet. Some projects are further along than others. IronClaw has WASM sandboxing with capability-based permissions. NanoClaw runs agents in Docker containers with mount allowlists. But even these are still evolving. There's no equivalent of, say, the browser security model for AI agents. Not yet.
+
+I find it hard to be comfortable giving a system access to so many facets of my personal life without understanding exactly how it works, what it can reach, and where the boundaries are. Even if the security story isn't complete, and right now it really isn't, I want to at least be aware of the risk areas.
+
+Building or studying the runtime ourselves is, right now, the best way to answer those questions. We can't assess risk in a system we don't understand.
+
+## The landscape
+
+OpenClaw was probably the project that showed the world how all the pieces fit together. 20+ messaging channels, self-evolving plugins, a polished onboarding experience. It went from zero to 250K+ GitHub stars in about a hundred days, surpassing both Linux and React to become the most-starred software project on GitHub. That kind of enthusiasm tells you something about how many people want a personal AI assistant they can actually control.
+
+OpenClaw embeds the Pi agent runtime, which deserves its own mention for proving that radical minimalism works: a handful of core tools and a system prompt under 1,000 tokens. That's it. And it's enough.
+
+Since then, a wave of similar projects have appeared, each with a different focus. **IronClaw** (Rust, security-first with WASM sandboxing and capability-based permissions), **Nanobot** (Python, ~4K lines, very pragmatic), **NanoClaw** (minimal Claude SDK wrapper with a clever git-branch feature system), **Hermes Agent** (self-improving agents that create their own skills). I started building my own, Duragent, around the same time as most of these. We're all working on similar problems, making different trade-offs.
+
+## Six building blocks
+
+One thing I noticed from studying all these projects: no matter how complex they look from the outside, they all share the same core structure. Every agent runtime is really just six things:
+
+1. **An agentic loop** that prompts the LLM, executes tool calls, feeds results back, and repeats until done
+2. **A tool system** for bash, file operations, web access, whatever else the agent needs
+3. **Session persistence** so conversations are durable
+4. **A gateway** for connecting to the outside world: CLI, HTTP, Telegram, Discord, etc
+5. **An LLM abstraction** so you can swap providers without rewriting everything
+6. **Agent configuration** to define what the agent is and how it behaves, ideally in files
+
+Everything else (memory, skills, sandboxing, self-improvement) sits on top of these. I distilled this list while preparing a [presentation about OpenClaw's architecture](https://github.com/giosakti/slides-dissecting-openclaw), and I keep coming back to it. Once you see these six pieces, you can evaluate any agent runtime you encounter.
+
+## What I learned from each project
+
+Each project makes different tradeoffs across those six blocks. Here are the ideas that stuck with me the most:
+
+From **Pi**: we don't need dozens of built-in tools. A handful of core tools and a tiny system prompt can get you surprisingly far. This really shifted how I think about agent design.
+
+From **OpenClaw**: the O.G. that put everything together. Beyond that, the idea that platform integrations should be isolated from the core runtime, so a bug in one channel doesn't take down the whole system. The two-layer memory approach (curated facts in MEMORY.md, daily experience logs in dated files) is simple and effective. And `openclaw onboard` getting you from zero to a working assistant in minutes set a high bar for onboarding.
+
+From **IronClaw**: security can't be an afterthought. Studying their capability-based WASM sandbox opened my eyes to how many attack surfaces a typical agent runtime has.
+
+From **Nanobot**: that you can build a capable agent runtime in ~4K lines of Python. There's been a fun one-upping in the community around minimalism: NanoClaw took it further at ~7K lines with a clever git-branch feature system, and then ZeroClaw showed up proving you can get away with even less.
+
+From **Hermes**: agents can create their own skills from experience. Also, loading memory into the system prompt once at session start and freezing it preserves prompt caching. Clever.
+
+## What I ended up building
+
+I started Duragent in January 2026, around the same time many of these projects were emerging. Written in Rust, duragent compiles to a ~10MB binary (or ~25MB if all features are enabled), it has zero runtime dependencies. Agents are defined as YAML + Markdown files:
+
+```yaml
+apiVersion: duragent/v1alpha1
+kind: Agent
+metadata:
+  name: my-assistant
+spec:
+  model:
+    provider: anthropic
+    name: claude-sonnet-4
+  soul: ./SOUL.md
+  system_prompt: ./SYSTEM_PROMPT.md
+  session:
+    on_disconnect: pause
+    max_tool_iterations: 15
+```
+
+All state lives as plain text files (JSONL event logs, JSON snapshots, Markdown memory) so you can grep and diff everything. Sessions are event-sourced, which means crash recovery is just replaying the log. You can attach and detach from sessions like tmux.
+
+I'm still not sure I made the right call on every design decision. That said, "build your own" doesn't have to mean writing everything from scratch. You can install OpenClaw and customize it. Fork NanoClaw, it's small enough to read in an afternoon. Or build on top of the Claude Agent SDK or OpenAI Agents SDK. The important thing is that we end up with something we understand.
+
+## What's next
+
+This is the first in a series of posts about what I've been learning while building Duragent. Next week I want to talk about context windows, specifically why 128K tokens is a lot less than you think once you start counting what actually goes into it.
+
+I'll keep referencing how different projects approach each problem, because that's where the interesting tradeoffs live. If you have the time and the curiosity, I'd really recommend trying to build (or dissect) one yourself.
+
+Code is at [github.com/giosakti/duragent](https://github.com/giosakti/duragent) if you want to take a look.
