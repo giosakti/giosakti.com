@@ -47,7 +47,14 @@ OpenClaw was probably the project that showed the world how all the pieces fit t
 
 OpenClaw embeds the Pi agent runtime, which deserves its own mention for proving that radical minimalism works: a handful of core tools and a system prompt under 1,000 tokens. That's it. And it's enough.
 
-Since then, a wave of similar projects have appeared, each with a different focus. **IronClaw** (Rust, security-first with WASM sandboxing and capability-based permissions), **Nanobot** (Python, ~4K lines, very pragmatic), **NanoClaw** (minimal Claude SDK wrapper with a clever git-branch feature system), **Hermes Agent** (self-improving agents that create their own skills). I started building my own, Duragent, around the same time as most of these. We're all working on similar problems, making different trade-offs.
+Since then, a wave of similar projects have appeared, each with a different focus:
+
+- **IronClaw** — Rust, security-first with WASM sandboxing and capability-based permissions
+- **Nanobot** — Python, ~4K lines, very pragmatic
+- **NanoClaw** — minimal Claude SDK wrapper with a clever git-branch feature system
+- **Hermes Agent** — self-improving agents that create their own skills
+
+I started building my own, Duragent, around the same time as most of these. We're all working on similar problems, making different trade-offs.
 
 ## Six building blocks
 
